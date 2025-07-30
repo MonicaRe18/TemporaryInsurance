@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المستحقات المالية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f1f5f9; /* bg-slate-100 */
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        .filter-btn-group .filter-btn.active {
+            background-color: #1e40af; /* bg-blue-800 */
+            color: white;
+            border-color: #1e40af; /* bg-blue-800 */
+            z-index: 10;
+        }
+        .modal-body { max-height: 80vh; }
+        #notification { transition: opacity 0.5s, transform 0.5s; }
+        
+        .status-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 6px;
+        }
+        input, select, textarea {
+            background-color: #f3f4f6;
+            border-color: #e5e7eb;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white text-gray-800 flex flex-col border-l border-gray-200 shadow-lg">
+            <div class="p-6 text-2xl font-bold border-b text-blue-800 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-800 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                <span>الحسابات</span>
+            </div>
+            <nav class="flex-1 p-4 mt-4">
+                <ul>
+                    <li><a href="#" class="flex items-center p-3 bg-blue-100 text-blue-800 rounded-lg font-semibold transition-colors duration-200 hover:bg-blue-200"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01M12 6v-1m0-1V4m0 2.01M12 18v-1m0-1v-.01m0-1.99V12m0 6c-1.11 0-2.08-.402-2.599-1M12 18v1m0 1v1m0-2.01V20" /></svg>المستحقات المالية</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <header class="bg-white border-b p-4 shadow-lg">
+                <h1 class="text-2xl font-bold text-blue-800">المستحقات المالية على القيم الإيجارية</h1>
+            </header>
+
+            <!-- Filters -->
+            <div class="p-4">
+                <div class="bg-white p-4 rounded-lg shadow-lg">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">تصفية حسب الشهر</label>
+                            <div class="filter-btn-group flex rounded-md">
+                                <button class="filter-btn active flex-1 p-2 border border-gray-300 rounded-r-md text-sm transition-colors duration-200 hover:bg-gray-100">الكل</button>
+                                <button class="filter-btn flex-1 p-2 border-t border-b border-gray-300 text-sm transition-colors duration-200 hover:bg-gray-100">الجاري</button>
+                                <button class="filter-btn flex-1 p-2 border border-gray-300 rounded-l-md text-sm transition-colors duration-200 hover:bg-gray-100">القادم</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="filter-center" class="block text-sm font-medium text-gray-700 mb-2">تصفية حسب المركز</label>
+                            <select id="filter-center" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white"><option>الكل</option><option>الداخلة</option><option>الخارجة</option><option>الفرافرة</option><option>بلاط</option><option>باريس</option></select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">العملة</label>
+                            <div id="currency-filter-group" class="filter-btn-group flex rounded-md">
+                                <button class="filter-btn active flex-1 p-2 border border-gray-300 rounded-r-md text-sm transition-colors duration-200 hover:bg-gray-100" data-value="ALL" data-symbol="">الكل</button>
+                                <button class="filter-btn flex-1 p-2 border-t border-b border-gray-300 text-sm transition-colors duration-200 hover:bg-gray-100" data-value="EGP" data-symbol="ج.م">جنيه مصري</button>
+                                <button class="filter-btn flex-1 p-2 border border-gray-300 rounded-l-md text-sm transition-colors duration-200 hover:bg-gray-100" data-value="USD" data-symbol="$">دولار أمريكي</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Grid -->
+            <div class="flex-1 overflow-x-auto px-4 pb-4">
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                    <table class="min-w-full text-center">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">رقم الفاتورة</th>
+                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">اسم المستثمر</th>
+                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">تاريخ الاستحقاق</th>
+                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">المبلغ</th>
+                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">الحالة</th>
+                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="dues-table-body">
+                            <!-- Rows will be populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- All Modals -->
+    <!-- Payment Modal -->
+    <div id="payment-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-4xl flex flex-col transform transition-all duration-300 scale-95 opacity-0">
+            <div class="p-4 border-b flex justify-between items-center bg-white rounded-t-lg">
+                <h2 class="text-2xl font-bold text-blue-800" id="payment-modal-title"></h2>
+                <button class="close-modal-btn text-gray-400 hover:text-gray-600">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 modal-body bg-gray-50">
+                 <div class="space-y-6">
+                    <div class="rounded-lg p-4 bg-yellow-50 border border-yellow-200">
+                        <h3 class="font-semibold text-lg mb-4 text-yellow-800">حساب غرامة التأخير</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                            <div>
+                                <label class="block text-sm text-gray-600">أصل المبلغ المستحق</label>
+                                <input type="text" id="modal-original-amount" readonly class="mt-1 p-2 w-full rounded-md border text-gray-800 font-semibold">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-600">أيام التأخير</label>
+                                <input type="text" id="modal-late-days" readonly class="mt-1 p-2 w-full rounded-md border text-gray-800 font-semibold">
+                            </div>
+                             <div>
+                                <label class="block text-sm text-gray-600">قيمة الغرامة</label>
+                                <input type="text" id="modal-fine-amount" readonly class="mt-1 p-2 w-full rounded-md border text-red-600 font-semibold">
+                            </div>
+                            <div class="flex items-center pb-2">
+                                <input id="apply-fine" type="checkbox" checked class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <label for="apply-fine" class="mr-2 text-sm text-gray-700">تطبيق الغرامة</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-600">تاريخ الاستحقاق</label>
+                            <input type="text" id="modal-due-date" readonly class="mt-1 p-2 w-full rounded-md border font-semibold text-gray-800">
+                        </div>
+                        <div>
+                             <label for="payment-date" class="block text-sm text-gray-600">تاريخ الدفع</label>
+                             <input type="date" id="payment-date" class="mt-1 p-2 w-full rounded-md border">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600">إجمالي المبلغ المستحق</label>
+                            <input type="text" id="modal-total-due" readonly class="mt-1 p-2 w-full rounded-md border font-bold text-xl text-blue-800">
+                        </div>
+                    </div>
+                    
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                             <label for="amount-collected" class="block text-sm text-gray-600">المبلغ المحصل</label>
+                             <input type="number" id="amount-collected" placeholder="0.00" class="mt-1 p-2 w-full border-gray-300 rounded-md text-left" dir="ltr">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600">المبلغ المتبقي</label>
+                            <input type="text" id="modal-remaining-amount" readonly class="mt-1 p-2 w-full rounded-md border font-bold text-xl text-red-800">
+                        </div>
+                    </div>
+                    
+                    <div id="payment-method-container">
+                        <div>
+                            <label for="payment-method-select" class="block text-sm text-gray-600">طريقة الدفع</label>
+                            <select id="payment-method-select" class="mt-1 p-2 w-full rounded-md border">
+                                <option value="cash">نقدي</option>
+                                <option value="bank-transfer">تحويل بنكي</option>
+                                <option value="cheque">شيك</option>
+                            </select>
+                        </div>
+                        <div id="payment-method-details" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Dynamic fields will be inserted here by JS -->
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-600">إرفاق مستند</label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md bg-white">
+                            <div class="space-y-1 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                                <div class="flex text-sm text-gray-600"><label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none"><span>ارفع ملف</span><input id="file-upload" name="file-upload" type="file" class="sr-only"></label><p class="pr-1">أو اسحبه وأفلته هنا</p></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-white border-t flex justify-start space-x-3 space-x-reverse rounded-b-lg">
+                <button id="complete-payment-btn" class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">إتمام الدفع</button>
+                <button class="cancel-payment-btn px-6 py-2 bg-white text-gray-700 border rounded-md hover:bg-gray-100">إلغاء</button>
+            </div>
+        </div>
+    </div>
+    <!-- Investor Details Modal -->
+    <div id="investor-details-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-gray-50 rounded-lg shadow-lg w-full max-w-3xl flex flex-col transform transition-all duration-300 scale-95 opacity-0">
+            <div class="p-4 border-b flex justify-between items-center bg-white rounded-t-lg"><h2 class="text-2xl font-bold text-blue-800" id="investor-modal-title"></h2><button class="close-modal-btn text-gray-400 hover:text-gray-600"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></div>
+            <div class="flex-1 overflow-y-auto p-6 modal-body space-y-6" id="investor-details-content"></div>
+            <div class="p-4 bg-white border-t flex justify-end rounded-b-lg"><button class="px-6 py-2 bg-blue-800 text-white rounded-md hover:bg-blue-900">طباعة</button></div>
+        </div>
+    </div>
+    <!-- Payment Receipt Modal -->
+    <div id="payment-receipt-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl flex flex-col transform transition-all duration-300 scale-95 opacity-0">
+            <div class="p-5 bg-gray-50 rounded-t-lg">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-blue-800" id="receipt-modal-title"></h2>
+                        <p class="text-sm text-gray-500">تفاصيل السداد</p>
+                    </div>
+                    <button class="close-modal-btn text-gray-400 hover:text-gray-600"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 modal-body space-y-6">
+                <div class="border rounded-lg p-4"><h3 class="font-bold text-lg mb-4 text-blue-800">ملخص السداد</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm"><div class="flex justify-between"><span>اسم المستثمر:</span><span class="font-semibold" id="receipt-investor-name"></span></div><div class="flex justify-between"><span>تاريخ الاستحقاق:</span><span class="font-semibold" id="receipt-due-date"></span></div><div class="flex justify-between"><span>تاريخ التحصيل:</span><span class="font-semibold" id="receipt-payment-date"></span></div><div class="flex justify-between"><span>المبلغ المستحق:</span><span class="font-semibold" id="receipt-total-due"></span></div><div class="flex justify-between"><span>المبلغ المحصل بالدفعة:</span><span class="font-semibold text-green-600" id="receipt-collected-amount"></span></div><div class="flex justify-between"><span>المبلغ المتبقي:</span><span class="font-semibold text-red-600" id="receipt-remaining-amount"></span></div></div></div>
+                <div class="border rounded-lg p-4"><h3 class="font-bold text-lg mb-4 text-blue-800">تفاصيل الدفعة</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm"><div class="flex justify-between"><span>طريقة الدفع:</span><span class="font-semibold" id="receipt-payment-method"></span></div><div class="flex justify-between"><span>البند:</span><span class="font-semibold">قيمة ايجارية</span></div><div class="flex justify-between"><span>غرامة مطبقة:</span><span class="font-semibold" id="receipt-fine-applied"></span></div><div class="flex justify-between"><span>اسم البنك / الخزينة:</span><span class="font-semibold" id="receipt-bank-name"></span></div><div class="flex justify-between md:col-span-2"><span>تفاصيل / مسؤول الاستلام:</span><span class="font-semibold" id="receipt-bank-details"></span></div><div class="flex justify-between"><span>المستند المرفق:</span><span class="font-semibold">لا يوجد مرفق</span></div></div></div>
+                <div class="border rounded-lg p-4 bg-gray-50"><h3 class="font-bold text-lg mb-2 text-blue-800">الملاحظات</h3><p class="text-sm text-gray-700" id="receipt-notes"></p></div>
+            </div>
+            <div class="p-4 bg-white border-t flex justify-end rounded-b-lg"><button class="px-6 py-2 bg-blue-800 text-white rounded-md hover:bg-blue-900">طباعة الإيصال</button></div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="fixed bottom-5 right-5 bg-green-500 text-white py-3 px-5 rounded-lg shadow-lg hidden transform translate-y-20 opacity-0"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- Shared Elements & Functions ---
+            const formatNumber = (num) => num.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+            const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+            const formatCurrency = (num, symbol) => `${formatNumber(num)} ${symbol}`;
+
+            const notification = document.getElementById('notification');
+            
+            function showNotification(message, isSuccess = true) {
+                notification.textContent = message;
+                notification.className = `fixed bottom-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg transform translate-y-20 opacity-0 ${isSuccess ? 'bg-green-500' : 'bg-red-500'}`;
+                requestAnimationFrame(() => { notification.classList.remove('hidden', 'opacity-0', 'translate-y-20'); });
+                setTimeout(() => {
+                    notification.classList.add('opacity-0', 'translate-y-20');
+                    setTimeout(() => notification.classList.add('hidden'), 500);
+                }, 3000);
+            }
+
+            function openModal(modal) {
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.querySelector('.transform').classList.remove('scale-95', 'opacity-0'), 10);
+            }
+
+            function closeModal(modal) {
+                modal.querySelector('.transform').classList.add('scale-95', 'opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+            
+            // --- Currency & Filter Logic ---
+            function applyCurrencyFilter() {
+                const selectedBtn = document.querySelector('#currency-filter-group .filter-btn.active');
+                const filterValue = selectedBtn.dataset.value;
+                const tableRows = document.querySelectorAll('#dues-table-body tr');
+
+                tableRows.forEach(row => {
+                    row.style.display = (filterValue === 'ALL' || row.dataset.currency === filterValue) ? '' : 'none';
+                });
+            }
+            
+            document.querySelectorAll('.filter-btn-group .filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const group = btn.closest('.filter-btn-group');
+                    group.querySelector('.active').classList.remove('active');
+                    btn.classList.add('active');
+                    if (group.id === 'currency-filter-group') {
+                        applyCurrencyFilter();
+                    }
+                });
+            });
+
+            // --- Modals ---
+            const modals = {
+                payment: document.getElementById('payment-modal'),
+                investorDetails: document.getElementById('investor-details-modal'),
+                paymentReceipt: document.getElementById('payment-receipt-modal'),
+            };
+
+            // --- Payment Modal Logic ---
+            const paymentModalTitle = document.getElementById('payment-modal-title');
+            const modalOriginalAmount = document.getElementById('modal-original-amount');
+            const modalLateDays = document.getElementById('modal-late-days');
+            const modalFineAmount = document.getElementById('modal-fine-amount');
+            const modalDueDate = document.getElementById('modal-due-date');
+            const modalTotalDue = document.getElementById('modal-total-due');
+            const modalRemainingAmount = document.getElementById('modal-remaining-amount');
+            const applyFineCheckbox = document.getElementById('apply-fine');
+            const paymentDateInput = document.getElementById('payment-date');
+            const amountCollectedInput = document.getElementById('amount-collected');
+            const paymentMethodSelect = document.getElementById('payment-method-select');
+            const paymentMethodDetails = document.getElementById('payment-method-details');
+            let currentOriginalAmount = 0;
+            let currentFine = 0;
+            let currentRow = null;
+            const FINE_RATE_PER_DAY = 0.01;
+
+            function populateInvestorDetails(container, data) {
+                const amountDue = parseFloat(data.amount);
+                const amountCollected = parseFloat(data.collected);
+                const currencySymbol = data.currencySymbol;
+                container.innerHTML = `
+                    <div class="border rounded-lg p-4 bg-white shadow-sm">
+                        <h3 class="font-bold text-lg mb-4 text-blue-800 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>معلومات المستثمر</h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between"><span>اسم العميل:</span><span class="font-semibold">${data.investor}</span></div>
+                            <div class="flex justify-between"><span>رقم الملف:</span><span class="font-semibold">${data.fileNumber}</span></div>
+                        </div>
+                    </div>
+                    <div class="border rounded-lg p-4 bg-white shadow-sm">
+                        <h3 class="font-bold text-lg mb-4 text-blue-800 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM4 10a2 2 0 00-2 2v2a2 2 0 002 2h12a2 2 0 002-2v-2a2 2 0 00-2-2H4z" /></svg>بيانات الأرض</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div class="flex justify-between"><span>المساحة:</span><span class="font-semibold">${data.area} فدان</span></div>
+                            <div class="flex justify-between"><span>القيمة الايجارية للفدان:</span><span class="font-semibold">${formatCurrency(parseFloat(data.rentPerFaddan), currencySymbol)}</span></div>
+                            <div class="flex justify-between"><span>القيمة الايجارية بالعام:</span><span class="font-semibold">${formatCurrency(amountDue, currencySymbol)}</span></div>
+                            <div class="flex justify-between"><span>التأمين:</span><span class="font-semibold">${formatCurrency(parseFloat(data.insurance), currencySymbol)}</span></div>
+                            <div class="flex justify-between"><span>نسبة التأمين:</span><span class="font-semibold">${data.insurancePercent}%</span></div>
+                            <div class="flex justify-between"><span>الباقي من التأمين:</span><span class="font-semibold">${formatCurrency(parseFloat(data.insuranceRemaining), currencySymbol)}</span></div>
+                            <div class="flex justify-between md:col-span-2"><span>تاريخ الاستلام:</span><span class="font-semibold">${formatDate(data.receiptDate)}</span></div>
+                        </div>
+                    </div>
+                    <div class="border rounded-lg p-4 bg-gray-50 shadow-sm">
+                        <h3 class="font-bold text-lg mb-4 text-blue-800 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor"><path d="M2 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1H3a1 1 0 01-1-1V4zM8 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1H9a1 1 0 01-1-1V4zM15 3a1 1 0 00-1 1v12a1 1 0 001 1h2a1 1 0 001-1V4a1 1 0 00-1-1h-2z" /></svg>الملخص المالي</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                            <div><p class="text-gray-500 text-sm">المبلغ المستحق</p><p class="font-bold text-lg">${formatCurrency(amountDue, currencySymbol)}</p></div>
+                            <div><p class="text-gray-500 text-sm">المبلغ المحصل</p><p class="font-bold text-lg text-green-600">${formatCurrency(amountCollected, currencySymbol)}</p></div>
+                            <div><p class="text-gray-500 text-sm">المبلغ المتأخر</p><p class="font-bold text-lg text-red-600">${formatCurrency(amountDue - amountCollected, currencySymbol)}</p></div>
+                        </div>
+                    </div>`;
+            }
+
+            function calculateFine(paymentDateStr, dueDateStr, amount) {
+                const paymentDate = new Date(paymentDateStr); paymentDate.setHours(0,0,0,0);
+                const dueDate = new Date(dueDateStr); dueDate.setHours(0,0,0,0);
+                const lateDays = paymentDate > dueDate ? Math.floor((paymentDate - dueDate) / (1000 * 60 * 60 * 24)) : 0;
+                const fine = lateDays > 0 ? amount * FINE_RATE_PER_DAY * lateDays : 0;
+                return { lateDays, fine };
+            }
+
+            function updatePaymentSummary() {
+                if (!currentRow) return;
+                const currencySymbol = currentRow.dataset.currencySymbol;
+                const { lateDays, fine } = calculateFine(paymentDateInput.value, currentRow.dataset.dueDate, currentOriginalAmount);
+                currentFine = fine;
+                modalLateDays.value = `${lateDays} يوم`;
+                modalFineAmount.value = formatCurrency(fine, currencySymbol);
+
+                const fineToApply = applyFineCheckbox.checked ? currentFine : 0;
+                const totalDue = currentOriginalAmount - parseFloat(currentRow.dataset.collected);
+                const totalDueWithFine = totalDue + fineToApply;
+                
+                modalTotalDue.value = formatCurrency(totalDueWithFine, currencySymbol);
+                const collectedAmount = parseFloat(amountCollectedInput.value) || 0;
+                const remainingAmount = totalDueWithFine - collectedAmount;
+                modalRemainingAmount.value = formatCurrency(remainingAmount, currencySymbol);
+            }
+
+            function openPaymentModal(row) {
+                currentRow = row;
+                const { invoice, dueDate, amount, currencySymbol } = row.dataset;
+                modals.payment.setAttribute('data-currency-symbol', currencySymbol);
+
+                currentOriginalAmount = parseFloat(amount);
+                
+                paymentModalTitle.textContent = `تسجيل دفعة للفاتورة: ${invoice}`;
+                modalDueDate.value = dueDate;
+                amountCollectedInput.value = '';
+                paymentDateInput.valueAsDate = new Date();
+                modalOriginalAmount.value = formatCurrency(currentOriginalAmount, currencySymbol);
+                
+                updatePaymentMethodDetails();
+                updatePaymentSummary(); // Initial calculation
+                openModal(modals.payment);
+            }
+
+            [paymentDateInput, applyFineCheckbox, amountCollectedInput].forEach(el => el.addEventListener('input', updatePaymentSummary));
+
+            document.getElementById('complete-payment-btn').addEventListener('click', () => {
+                if (!currentRow) return;
+                const collectedAmount = parseFloat(amountCollectedInput.value) || 0;
+                if (collectedAmount <= 0) {
+                    showNotification('الرجاء إدخال مبلغ محصل صحيح.', false);
+                    return;
+                }
+                
+                currentRow.dataset.lastPaymentDate = paymentDateInput.value;
+                currentRow.dataset.lastCollectedAmount = collectedAmount;
+                currentRow.dataset.lastFineApplied = applyFineCheckbox.checked;
+                currentRow.dataset.lastPaymentNotes = "ملاحظات"; // Placeholder
+                currentRow.dataset.lastPaymentMethod = paymentMethodSelect.options[paymentMethodSelect.selectedIndex].text;
+                
+                // Save details based on payment method
+                const method = paymentMethodSelect.value;
+                if (method === 'cash') {
+                    currentRow.dataset.lastBankName = document.getElementById('treasury-name').value;
+                    currentRow.dataset.lastBankDetails = document.getElementById('receiver-name').value;
+                } else if (method === 'bank-transfer') {
+                    currentRow.dataset.lastBankName = document.getElementById('bank-name').value;
+                    currentRow.dataset.lastBankDetails = document.getElementById('transfer-details').value;
+                } else if (method === 'cheque') {
+                    currentRow.dataset.lastBankName = document.getElementById('cheque-number').value;
+                    currentRow.dataset.lastBankDetails = document.getElementById('cheque-due-date').value;
+                }
+
+
+                const previouslyCollected = parseFloat(currentRow.dataset.collected);
+                const newTotalCollected = previouslyCollected + collectedAmount;
+                currentRow.dataset.collected = newTotalCollected;
+
+                const { fine } = calculateFine(paymentDateInput.value, currentRow.dataset.dueDate, currentOriginalAmount);
+                const fineToApply = applyFineCheckbox.checked ? fine : 0;
+                const totalDueWithFine = currentOriginalAmount + fineToApply;
+                
+                const statusCell = currentRow.querySelector('.status-badge');
+                if (newTotalCollected >= totalDueWithFine) {
+                    statusCell.innerHTML = `<span class="dot bg-gray-400"></span>مدفوع`;
+                    statusCell.className = 'status-badge flex items-center text-sm font-medium text-gray-600';
+                } else {
+                    statusCell.innerHTML = `<span class="dot bg-yellow-400"></span>مدفوع جزئياً`;
+                    statusCell.className = 'status-badge flex items-center text-sm font-medium text-yellow-600';
+                }
+
+                const actionCell = currentRow.querySelector('.action-cell');
+                actionCell.innerHTML = `
+                    <div class="flex items-center space-x-4 space-x-reverse">
+                        <button class="investor-details-btn flex items-center text-gray-600 hover:text-blue-600 transition-colors" title="تفاصيل المستثمر">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                            <span>تفاصيل المستثمر</span>
+                        </button>
+                        <button class="payment-receipt-btn flex items-center text-gray-600 hover:text-blue-600 transition-colors" title="عرض السداد">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            <span>عرض السداد</span>
+                        </button>
+                    </div>`;
+
+                closeModal(modals.payment);
+                showNotification('تمت عملية السداد بنجاح!');
+            });
+
+            function openInvestorDetailsModal(row) {
+                const { invoice, currencySymbol } = row.dataset;
+                modals.investorDetails.setAttribute('data-currency-symbol', currencySymbol);
+                document.getElementById('investor-modal-title').textContent = `تفاصيل المستثمر للفاتورة: ${invoice}`;
+                const contentContainer = document.getElementById('investor-details-content');
+                populateInvestorDetails(contentContainer, row.dataset);
+                openModal(modals.investorDetails);
+            }
+            
+            function openPaymentReceiptModal(row) {
+                const { investor, dueDate, lastPaymentDate, amount, lastCollectedAmount, lastFineApplied, lastPaymentMethod, lastBankName, lastBankDetails, lastPaymentNotes, currencySymbol, collected } = row.dataset;
+                modals.paymentReceipt.setAttribute('data-currency-symbol', currencySymbol);
+                
+                const receiptId = `REC-${Date.now().toString().slice(-6)}`;
+                document.getElementById('receipt-modal-title').textContent = receiptId;
+                document.getElementById('receipt-investor-name').textContent = investor;
+                document.getElementById('receipt-due-date').textContent = formatDate(dueDate);
+                document.getElementById('receipt-payment-date').textContent = formatDate(lastPaymentDate);
+                
+                const originalAmount = parseFloat(amount);
+                const { fine } = calculateFine(lastPaymentDate, dueDate, originalAmount);
+                const fineApplied = lastFineApplied === 'true';
+                const totalDue = originalAmount + (fineApplied ? fine : 0);
+                
+                document.getElementById('receipt-total-due').textContent = formatCurrency(totalDue, currencySymbol);
+                document.getElementById('receipt-collected-amount').textContent = formatCurrency(parseFloat(lastCollectedAmount), currencySymbol);
+                document.getElementById('receipt-remaining-amount').textContent = formatCurrency(totalDue - parseFloat(collected), currencySymbol);
+                document.getElementById('receipt-payment-method').textContent = lastPaymentMethod;
+                document.getElementById('receipt-fine-applied').textContent = fineApplied ? 'نعم' : 'لا';
+                document.getElementById('receipt-bank-name').textContent = lastBankName || 'N/A';
+                document.getElementById('receipt-bank-details').textContent = lastBankDetails || 'N/A';
+                document.getElementById('receipt-notes').textContent = lastPaymentNotes || 'لا يوجد';
+                openModal(modals.paymentReceipt);
+            }
+
+            function updatePaymentMethodDetails() {
+                const selectedMethod = paymentMethodSelect.value;
+                let detailsHtml = '';
+
+                if (selectedMethod === 'cash') {
+                    detailsHtml = `
+                        <div>
+                            <label for="treasury-name" class="block text-sm text-gray-600">اسم الخزينة</label>
+                            <input type="text" id="treasury-name" class="mt-1 p-2 w-full rounded-md border">
+                        </div>
+                        <div>
+                            <label for="receiver-name" class="block text-sm text-gray-600">مسؤول الاستلام</label>
+                            <input type="text" id="receiver-name" class="mt-1 p-2 w-full rounded-md border">
+                        </div>`;
+                } else if (selectedMethod === 'bank-transfer') {
+                    detailsHtml = `
+                        <div>
+                            <label for="bank-name" class="block text-sm text-gray-600">اسم البنك</label>
+                            <input type="text" id="bank-name" class="mt-1 p-2 w-full rounded-md border">
+                        </div>
+                        <div>
+                            <label for="transfer-details" class="block text-sm text-gray-600">تفاصيل التحويل</label>
+                            <input type="text" id="transfer-details" class="mt-1 p-2 w-full rounded-md border">
+                        </div>`;
+                } else if (selectedMethod === 'cheque') {
+                    detailsHtml = `
+                        <div>
+                            <label for="cheque-number" class="block text-sm text-gray-600">رقم الشيك</label>
+                            <input type="text" id="cheque-number" class="mt-1 p-2 w-full rounded-md border">
+                        </div>
+                        <div>
+                            <label for="cheque-due-date" class="block text-sm text-gray-600">تاريخ استحقاق الشيك</label>
+                            <input type="date" id="cheque-due-date" class="mt-1 p-2 w-full rounded-md border">
+                        </div>`;
+                }
+                paymentMethodDetails.innerHTML = detailsHtml;
+            }
+
+            paymentMethodSelect.addEventListener('change', updatePaymentMethodDetails);
+
+
+            document.getElementById('dues-table-body').addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                if (!button) return;
+                const row = e.target.closest('tr');
+                if (button.classList.contains('pay-btn')) openPaymentModal(row);
+                if (button.classList.contains('view-btn') || button.classList.contains('investor-details-btn')) openInvestorDetailsModal(row);
+                if (button.classList.contains('payment-receipt-btn')) openPaymentReceiptModal(row);
+            });
+
+            document.querySelectorAll('.close-modal-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => closeModal(e.target.closest('.fixed')));
+            });
+            document.querySelector('.cancel-payment-btn').addEventListener('click', () => closeModal(modals.payment));
+            
+            // --- Initial Data Population ---
+            const initialData = [
+                { invoice: "INV-001", investor: "أحمد محمود", dueDate: "2025-07-15", amount: 5000, fileNumber: "FN-1023", legalEntity: "فرد", area: 10, rentPerFaddan: 500, insurance: 1000, insurancePercent: 20, insuranceRemaining: 500, receiptDate: "2024-01-01", collected: 0, currency: "EGP", currencySymbol: "ج.م" },
+                { invoice: "INV-002", investor: "شركة الوادي الجديد", dueDate: "2025-08-01", amount: 1200, fileNumber: "FN-1024", legalEntity: "شركة", area: 50, rentPerFaddan: 24, insurance: 240, insurancePercent: 20, insuranceRemaining: 240, receiptDate: "2024-02-01", collected: 0, currency: "USD", currencySymbol: "$" }
+            ];
+
+            const tableBody = document.getElementById('dues-table-body');
+            initialData.forEach(d => {
+                const row = document.createElement('tr');
+                Object.keys(d).forEach(key => row.dataset[key] = d[key]);
+                row.className = 'hover:bg-gray-50 transition-colors duration-200';
+                
+                const lateDays = calculateFine(new Date().toISOString().split('T')[0], d.dueDate, d.amount).lateDays;
+                let statusBadge;
+                if (lateDays > 0) {
+                    statusBadge = `<span class="status-badge flex items-center text-sm font-medium text-red-600"><span class="dot bg-red-400"></span>متأخر</span>`;
+                } else {
+                    statusBadge = `<span class="status-badge flex items-center text-sm font-medium text-green-600"><span class="dot bg-green-400"></span>مستحق</span>`;
+                }
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 text-center font-semibold">${d.invoice}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 text-center font-semibold">${d.investor}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center font-semibold">${d.dueDate}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-semibold text-center">${formatCurrency(d.amount, d.currencySymbol)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">${statusBadge}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium action-cell text-center">
+                        <div class="flex items-center space-x-4 space-x-reverse justify-center">
+                            <button class="view-btn flex items-center text-gray-600 hover:text-blue-600 transition-colors" title="عرض التفاصيل">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.022 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                <span>عرض</span>
+                            </button>
+                            <button class="pay-btn flex items-center text-gray-600 hover:text-blue-600 transition-colors" title="دفع الفاتورة">
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                                <span>دفع</span>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            // Initial call
+            applyCurrencyFilter();
+        });
+    </script>
+</body>
+</html>
